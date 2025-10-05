@@ -39,8 +39,6 @@ const questions: Question[] = [
     options: [
       { label: "A", type: "jolly", en: "Male", idText: "Laki-laki" },
       { label: "B", type: "slick", en: "Female", idText: "Perempuan" },
-      { label: "C", type: "buck", en: "Male", idText: "Laki-laki" },
-      { label: "D", type: "snip", en: "Female", idText: "Perempuan" },
     ],
   },
   {
@@ -270,15 +268,15 @@ const Index = () => {
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {stage === "landing" && (
           <Card className="rounded-2xl shadow-xl border-2 animate-scale-in">
             <CardHeader className="text-center space-y-4 pb-4">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-primary mx-auto mb-2">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary mx-auto mb-2">
                 <span className="text-4xl">📦</span>
               </div>
-              <CardTitle className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <CardTitle className="text-4xl font-bold text-primary">
                 Box of You
               </CardTitle>
               <p className="text-xl text-muted-foreground">
@@ -364,9 +362,9 @@ const Index = () => {
         )}
 
         {stage === "result" && result && (
-          <Card className={`rounded-2xl shadow-xl border-2 animate-scale-in bg-${result.personality}-light/20`}>
+          <Card className={`rounded-2xl shadow-xl border-2 animate-scale-in`}>
             <CardHeader className="text-center space-y-4">
-              <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-${result.personality} mx-auto`}>
+              <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full bg-${result.personality} mx-auto`}>
                 <span className="text-5xl">
                   {result.personality === "jolly" && "😄"}
                   {result.personality === "slick" && "😌"}
