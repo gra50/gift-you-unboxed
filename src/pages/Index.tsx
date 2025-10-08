@@ -118,41 +118,41 @@ const questions: Question[] = [
 const personalityInfo = {
   jolly: {
     en: {
-      name: "Jolly (Sanguine)",
+      name: "Jolly",
       description: "Fun-loving, cheerful, and loves being around people. They appreciate gifts that bring joy and laughter!",
     },
     idText: {
-      name: "Jolly (Sanguine)",
+      name: "Jolly",
       description: "Ceria, suka bersenang-senang, dan menyukai keramaian. Mereka menghargai hadiah yang membawa kebahagiaan!",
     },
   },
   slick: {
     en: {
-      name: "Slick (Phlegmatic)",
+      name: "Slick",
       description: "Calm, peaceful, and thoughtful. They value comfort and gifts that show care and attention.",
     },
     idText: {
-      name: "Slick (Phlegmatic)",
+      name: "Slick",
       description: "Tenang, damai, dan bijaksana. Mereka menghargai kenyamanan dan hadiah yang menunjukkan perhatian.",
     },
   },
   buck: {
     en: {
-      name: "Buck (Melancholic)",
+      name: "Buck",
       description: "Deep, artistic, and emotional. They treasure gifts with meaning and sentimental value.",
     },
     idText: {
-      name: "Buck (Melancholic)",
+      name: "Buck",
       description: "Mendalam, artistik, dan emosional. Mereka menghargai hadiah yang bermakna dan berkesan.",
     },
   },
   snip: {
     en: {
-      name: "Snip (Choleric)",
+      name: "Snip",
       description: "Practical, productive, and goal-oriented. They prefer functional gifts that serve a purpose.",
     },
     idText: {
-      name: "Snip (Choleric)",
+      name: "Snip",
       description: "Praktis, produktif, dan terarah. Mereka lebih suka hadiah yang fungsional dan berguna.",
     },
   },
