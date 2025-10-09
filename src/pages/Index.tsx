@@ -235,6 +235,28 @@ const Index = () => {
     savedResults.push(quizResult);
     localStorage.setItem("quizResults", JSON.stringify(savedResults));
 
+    // Send to Google Sheets
+    fetch("https://script.google.com/macros/s/AKfycbzHr2g30_qognYuIqs4IteIJgmF-mL32RL8xCgubgBPqEGEFI5MJUafS-e0sBf8uQQd/exec", {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        timestamp: quizResult.timestamp,
+        personality: personality,
+        age: parseInt(age),
+        jollyPercentage: percentages.jolly,
+        slickPercentage: percentages.slick,
+        buckPercentage: percentages.buck,
+        snipPercentage: percentages.snip,
+        language: language,
+        answers: finalAnswers.join(", "),
+      }),
+    }).catch((error) => {
+      console.error("Error sending to Google Sheets:", error);
+    });
+
     setTimeout(() => {
       setStage("result");
       setIsTransitioning(false);
