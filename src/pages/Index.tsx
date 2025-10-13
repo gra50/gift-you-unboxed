@@ -187,7 +187,6 @@ const Index = () => {
       setAnswers(newAnswers);
 
       if (currentQuestion < questions.length - 1) {
-        playSound("transition");
         setCurrentQuestion(currentQuestion + 1);
         setIsTransitioning(false);
       } else {
@@ -299,19 +298,33 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Mute/Unmute Toggle */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => {
-          playSound("click");
-          toggleMute();
-        }}
-        className="fixed top-4 right-4 z-50 rounded-full w-12 h-12 hover:scale-110 transition-transform"
-        aria-label={isMuted ? "Unmute sounds" : "Mute sounds"}
-      >
-        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-      </Button>
+      {/* Fixed Header Buttons */}
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            playSound("click");
+            setLanguage(language === "en" ? "id" : "en");
+          }}
+          className="rounded-full w-12 h-12 hover:scale-110 transition-transform"
+          aria-label="Switch language"
+        >
+          <Globe className="w-5 h-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            playSound("click");
+            toggleMute();
+          }}
+          className="rounded-full w-12 h-12 hover:scale-110 transition-transform"
+          aria-label={isMuted ? "Unmute sounds" : "Mute sounds"}
+        >
+          {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+        </Button>
+      </div>
 
       <div className="w-full max-w-2xl">
         {stage === "landing" && (
@@ -328,21 +341,6 @@ const Index = () => {
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex justify-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    playSound("click");
-                    setLanguage(language === "en" ? "id" : "en");
-                  }}
-                  className="gap-2"
-                >
-                  <Globe className="w-4 h-4" />
-                  {language === "en" ? "English" : "Bahasa Indonesia"}
-                </Button>
-              </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-medium">
                   {language === "en" ? "Your Age" : "Usia Kamu"}
