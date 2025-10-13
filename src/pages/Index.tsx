@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Share2, Globe } from "lucide-react";
+import { Share2, Globe, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
+import { useSound } from "@/hooks/use-sound";
 
 type Language = "en" | "id";
 type PersonalityType = "jolly" | "slick" | "buck" | "snip";
@@ -166,16 +167,19 @@ const Index = () => {
   const [answers, setAnswers] = useState<PersonalityType[]>([]);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const { playSound, isMuted, toggleMute } = useSound();
 
   const startQuiz = () => {
     if (!age || parseInt(age) < 1 || parseInt(age) > 120) {
       toast.error(language === "en" ? "Please enter a valid age" : "Masukkan usia yang valid");
       return;
     }
+    playSound("start");
     setStage("quiz");
   };
 
   const handleAnswer = (type: PersonalityType) => {
+    playSound("click");
     setIsTransitioning(true);
     
     setTimeout(() => {
@@ -183,6 +187,7 @@ const Index = () => {
       setAnswers(newAnswers);
 
       if (currentQuestion < questions.length - 1) {
+        playSound("transition");
         setCurrentQuestion(currentQuestion + 1);
         setIsTransitioning(false);
       } else {
@@ -258,12 +263,14 @@ const Index = () => {
     });
 
     setTimeout(() => {
+      playSound("success");
       setStage("result");
       setIsTransitioning(false);
     }, 300);
   };
 
   const shareResult = () => {
+    playSound("click");
     const resultText = language === "en"
       ? `I got ${personalityInfo[result!.personality].en.name} in the Box of You Personality Quiz!`
       : `Aku dapat ${personalityInfo[result!.personality].idText.name} di Quiz Kepribadian Box of You!`;
@@ -280,6 +287,7 @@ const Index = () => {
   };
 
   const resetQuiz = () => {
+    playSound("click");
     setStage("landing");
     setCurrentQuestion(0);
     setAnswers([]);
@@ -291,6 +299,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      {/* Mute/Unmute Toggle */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => {
+          playSound("click");
+          toggleMute();
+        }}
+        className="fixed top-4 right-4 z-50 rounded-full w-12 h-12 hover:scale-110 transition-transform"
+        aria-label={isMuted ? "Unmute sounds" : "Mute sounds"}
+      >
+        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+      </Button>
+
       <div className="w-full max-w-2xl">
         {stage === "landing" && (
           <Card className="rounded-2xl shadow-xl border-2 animate-scale-in">
@@ -310,7 +332,10 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setLanguage(language === "en" ? "id" : "en")}
+                  onClick={() => {
+                    playSound("click");
+                    setLanguage(language === "en" ? "id" : "en");
+                  }}
                   className="gap-2"
                 >
                   <Globe className="w-4 h-4" />
