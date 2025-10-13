@@ -379,30 +379,44 @@ const Index = () => {
               <Progress value={progress} className="h-2" />
             </div>
 
-            <Card
-              className={`rounded-2xl shadow-xl border-2 transition-all duration-300 ${
-                isTransitioning ? "opacity-0 translate-x-8" : "opacity-100 translate-x-0 animate-slide-in"
-              }`}
-            >
-              <CardHeader>
-                <CardTitle className="text-2xl">
-                  {language === "en" ? questions[currentQuestion].en : questions[currentQuestion].idText}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {questions[currentQuestion].options.map((option) => (
-                  <Button
+            {/* Chat Interface */}
+            <div className="bg-card rounded-3xl shadow-xl border-2 p-6 min-h-[400px] flex flex-col justify-between">
+              {/* Question Bubble (Left - Received Message) */}
+              <div
+                className={`flex justify-start mb-6 transition-all duration-300 ${
+                  isTransitioning ? "opacity-0 -translate-x-8" : "opacity-100 translate-x-0"
+                }`}
+              >
+                <div className="bg-muted rounded-3xl rounded-tl-sm px-6 py-4 max-w-[85%] shadow-md">
+                  <p className="text-lg font-medium text-foreground">
+                    {language === "en" ? questions[currentQuestion].en : questions[currentQuestion].idText}
+                  </p>
+                </div>
+              </div>
+
+              {/* Answer Bubbles (Right - Sent Messages) */}
+              <div className="space-y-3">
+                {questions[currentQuestion].options.map((option, index) => (
+                  <div
                     key={option.label}
-                    onClick={() => handleAnswer(option.type)}
-                    variant="outline"
-                    className="w-full py-6 text-left justify-start text-lg font-medium transition-all hover:scale-[1.02] hover:shadow-lg hover:border-primary"
+                    className={`flex justify-end transition-all duration-300 ${
+                      isTransitioning ? "opacity-0 translate-x-8" : "opacity-100 translate-x-0"
+                    }`}
+                    style={{ transitionDelay: `${index * 50}ms` }}
                   >
-                    <span className="font-bold mr-3 text-primary">{option.label}.</span>
-                    {language === "en" ? option.en : option.idText}
-                  </Button>
+                    <button
+                      onClick={() => handleAnswer(option.type)}
+                      className="bg-primary text-primary-foreground rounded-3xl rounded-tr-sm px-6 py-4 max-w-[85%] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all active:scale-95 text-left"
+                    >
+                      <span className="font-bold mr-2">{option.label}.</span>
+                      <span className="text-base font-medium">
+                        {language === "en" ? option.en : option.idText}
+                      </span>
+                    </button>
+                  </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
 
