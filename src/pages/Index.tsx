@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Share2, Globe, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { useSound } from "@/hooks/use-sound";
+import boxLogo from "@/assets/box-of-u-logo.png";
 
 type Language = "en" | "id";
 type PersonalityType = "jolly" | "slick" | "buck" | "snip";
@@ -29,6 +32,14 @@ interface QuizResult {
   age: number;
   answers: PersonalityType[];
   timestamp: string;
+}
+
+interface ChatMessage {
+  type: "question" | "answer";
+  content: string;
+  questionId: number;
+  answerType?: PersonalityType;
+  isTyping?: boolean;
 }
 
 const questions: Question[] = [
@@ -165,9 +176,28 @@ const Index = () => {
   const [age, setAge] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<PersonalityType[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { playSound, isMuted, toggleMute } = useSound();
+
+  useEffect(() => {
+    if (stage === "quiz" && chatMessages.length === 0) {
+      // Show first question with typing animation
+      showNextQuestion();
+    }
+  }, [stage]);
+
+  useEffect(() => {
+    // Auto scroll to bottom when new messages appear
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [chatMessages, isTyping]);
 
   const startQuiz = () => {
     if (!age || parseInt(age) < 1 || parseInt(age) > 120) {
@@ -176,23 +206,58 @@ const Index = () => {
     }
     playSound("start");
     setStage("quiz");
+    setChatMessages([]);
+    setCurrentQuestion(0);
   };
 
-  const handleAnswer = (type: PersonalityType) => {
-    playSound("click");
-    setIsTransitioning(true);
+  const showNextQuestion = () => {
+    setIsTyping(true);
     
+    // Simulate typing delay
     setTimeout(() => {
-      const newAnswers = [...answers, type];
-      setAnswers(newAnswers);
+      const questionText = language === "en" 
+        ? questions[currentQuestion].en 
+        : questions[currentQuestion].idText;
+      
+      setChatMessages(prev => [
+        ...prev,
+        {
+          type: "question",
+          content: questionText,
+          questionId: currentQuestion,
+          isTyping: false
+        }
+      ]);
+      setIsTyping(false);
+    }, 800);
+  };
 
-      if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1);
-        setIsTransitioning(false);
-      } else {
-        calculateResult(newAnswers);
+  const handleAnswer = (type: PersonalityType, answerText: string) => {
+    playSound("click");
+    
+    // Add answer to chat
+    setChatMessages(prev => [
+      ...prev,
+      {
+        type: "answer",
+        content: answerText,
+        questionId: currentQuestion,
+        answerType: type
       }
-    }, 300);
+    ]);
+
+    const newAnswers = [...answers, type];
+    setAnswers(newAnswers);
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      // Show next question after a short delay
+      setTimeout(() => {
+        showNextQuestion();
+      }, 500);
+    } else {
+      calculateResult(newAnswers);
+    }
   };
 
   const calculateResult = (finalAnswers: PersonalityType[]) => {
@@ -264,7 +329,6 @@ const Index = () => {
     setTimeout(() => {
       playSound("success");
       setStage("result");
-      setIsTransitioning(false);
     }, 300);
   };
 
@@ -290,6 +354,7 @@ const Index = () => {
     setStage("landing");
     setCurrentQuestion(0);
     setAnswers([]);
+    setChatMessages([]);
     setResult(null);
     setAge("");
   };
@@ -368,7 +433,7 @@ const Index = () => {
         )}
 
         {stage === "quiz" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>
@@ -380,43 +445,75 @@ const Index = () => {
             </div>
 
             {/* Chat Interface */}
-            <div className="bg-card rounded-3xl shadow-xl border-2 p-6 min-h-[400px] flex flex-col justify-between">
-              {/* Question Bubble (Left - Received Message) */}
-              <div
-                className={`flex justify-start mb-6 transition-all duration-300 ${
-                  isTransitioning ? "opacity-0 -translate-x-8" : "opacity-100 translate-x-0"
-                }`}
-              >
-                <div className="bg-muted rounded-3xl rounded-tl-sm px-6 py-4 max-w-[85%] shadow-md">
-                  <p className="text-lg font-medium text-foreground">
-                    {language === "en" ? questions[currentQuestion].en : questions[currentQuestion].idText}
-                  </p>
-                </div>
-              </div>
+            <Card className="rounded-3xl shadow-xl border-2 overflow-hidden">
+              <ScrollArea ref={scrollAreaRef} className="h-[600px]">
+                <div className="p-6 space-y-4">
+                  {chatMessages.map((message, index) => (
+                    <div key={index}>
+                      {message.type === "question" ? (
+                        // Question Bubble (Left - Received Message)
+                        <div className="flex justify-start gap-3 animate-fade-in">
+                          <Avatar className="w-10 h-10 flex-shrink-0">
+                            <AvatarImage src={boxLogo} alt="Box of U" />
+                            <AvatarFallback>📦</AvatarFallback>
+                          </Avatar>
+                          <div className="bg-muted rounded-3xl rounded-tl-sm px-5 py-3 max-w-[75%] shadow-sm">
+                            <p className="text-base font-medium text-foreground">
+                              {message.content}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        // Answer Bubble (Right - Sent Message)
+                        <div className="flex justify-end animate-fade-in">
+                          <div className="bg-primary text-primary-foreground rounded-3xl rounded-tr-sm px-5 py-3 max-w-[75%] shadow-sm">
+                            <p className="text-base font-medium">
+                              {message.content}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
 
-              {/* Answer Bubbles (Right - Sent Messages) */}
-              <div className="space-y-3">
-                {questions[currentQuestion].options.map((option, index) => (
-                  <div
-                    key={option.label}
-                    className={`flex justify-end transition-all duration-300 ${
-                      isTransitioning ? "opacity-0 translate-x-8" : "opacity-100 translate-x-0"
-                    }`}
-                    style={{ transitionDelay: `${index * 50}ms` }}
-                  >
+                  {/* Typing Indicator */}
+                  {isTyping && (
+                    <div className="flex justify-start gap-3 animate-fade-in">
+                      <Avatar className="w-10 h-10 flex-shrink-0">
+                        <AvatarImage src={boxLogo} alt="Box of U" />
+                        <AvatarFallback>📦</AvatarFallback>
+                      </Avatar>
+                      <div className="bg-muted rounded-3xl rounded-tl-sm px-5 py-3 shadow-sm">
+                        <div className="flex gap-1">
+                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Answer Options - Fixed at Bottom */}
+              {!isTyping && currentQuestion < questions.length && (
+                <div className="border-t bg-background p-4 space-y-2">
+                  {questions[currentQuestion].options.map((option, index) => (
                     <button
-                      onClick={() => handleAnswer(option.type)}
-                      className="bg-primary text-primary-foreground rounded-3xl rounded-tr-sm px-6 py-4 max-w-[85%] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all active:scale-95 text-left"
+                      key={option.label}
+                      onClick={() => handleAnswer(option.type, language === "en" ? option.en : option.idText)}
+                      className="w-full bg-primary/10 hover:bg-primary/20 text-foreground rounded-2xl px-5 py-3 text-left transition-all hover:scale-[1.01] active:scale-[0.99] border border-primary/20 animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <span className="font-bold mr-2">{option.label}.</span>
-                      <span className="text-base font-medium">
+                      <span className="font-bold text-primary mr-2">{option.label}.</span>
+                      <span className="text-sm font-medium">
                         {language === "en" ? option.en : option.idText}
                       </span>
                     </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           </div>
         )}
 
