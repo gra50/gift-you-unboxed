@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Share2, Globe, Volume2, VolumeX } from "lucide-react";
+import { Share2, Globe, Volume2, VolumeX, Sparkles, Instagram } from "lucide-react";
 import { toast } from "sonner";
 import { useSound } from "@/hooks/use-sound";
 import boxLogo from "@/assets/box-of-u-logo.png";
+import confetti from "canvas-confetti";
 
 type Language = "en" | "id";
 type PersonalityType = "jolly" | "slick" | "buck" | "snip";
@@ -173,6 +174,7 @@ const personalityInfo = {
 const Index = () => {
   const [language, setLanguage] = useState<Language>("en");
   const [stage, setStage] = useState<"landing" | "quiz" | "result">("landing");
+  const [userName, setUserName] = useState("");
   const [age, setAge] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<PersonalityType[]>([]);
@@ -200,6 +202,10 @@ const Index = () => {
   }, [chatMessages, isTyping]);
 
   const startQuiz = () => {
+    if (!userName.trim()) {
+      toast.error(language === "en" ? "Please tell me your name! 💕" : "Kasih tau nama kamu dong! 💕");
+      return;
+    }
     if (!age || parseInt(age) < 1 || parseInt(age) > 120) {
       toast.error(language === "en" ? "Please enter a valid age" : "Masukkan usia yang valid");
       return;
@@ -213,23 +219,58 @@ const Index = () => {
   const showNextQuestion = () => {
     setIsTyping(true);
     
-    // Simulate typing delay
-    setTimeout(() => {
-      const questionText = language === "en" 
-        ? questions[currentQuestion].en 
-        : questions[currentQuestion].idText;
+    // Add greeting for first question
+    if (currentQuestion === 0) {
+      const greeting = language === "en"
+        ? `Haii ${userName}! 💕 Let's discover your vibe together, okay? ✨`
+        : `Haii ${userName}! 💕 Yuk kita cari tau vibe kamu bareng-bareng yaa ✨`;
       
-      setChatMessages(prev => [
-        ...prev,
-        {
-          type: "question",
-          content: questionText,
-          questionId: currentQuestion,
-          isTyping: false
-        }
-      ]);
-      setIsTyping(false);
-    }, 800);
+      setChatMessages([{
+        type: "question",
+        content: greeting,
+        questionId: -1,
+        isTyping: false
+      }]);
+      
+      // Show actual first question after greeting
+      setTimeout(() => {
+        setIsTyping(true);
+        setTimeout(() => {
+          const questionText = language === "en" 
+            ? questions[currentQuestion].en 
+            : questions[currentQuestion].idText;
+          
+          setChatMessages(prev => [
+            ...prev,
+            {
+              type: "question",
+              content: questionText,
+              questionId: currentQuestion,
+              isTyping: false
+            }
+          ]);
+          setIsTyping(false);
+        }, 1000);
+      }, 500);
+    } else {
+      // For subsequent questions
+      setTimeout(() => {
+        const questionText = language === "en" 
+          ? questions[currentQuestion].en 
+          : questions[currentQuestion].idText;
+        
+        setChatMessages(prev => [
+          ...prev,
+          {
+            type: "question",
+            content: questionText,
+            questionId: currentQuestion,
+            isTyping: false
+          }
+        ]);
+        setIsTyping(false);
+      }, 1000);
+    }
   };
 
   const handleAnswer = (type: PersonalityType, answerText: string) => {
@@ -329,6 +370,13 @@ const Index = () => {
     setTimeout(() => {
       playSound("success");
       setStage("result");
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#F5A3B8', '#E8C4A8', '#A8D5E5', '#D4B5E0']
+      });
     }, 300);
   };
 
@@ -356,13 +404,14 @@ const Index = () => {
     setAnswers([]);
     setChatMessages([]);
     setResult(null);
+    setUserName("");
     setAge("");
   };
 
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-4">
       {/* Fixed Header Buttons */}
       <div className="fixed top-4 right-4 z-50 flex gap-2">
         <Button
@@ -372,7 +421,7 @@ const Index = () => {
             playSound("click");
             setLanguage(language === "en" ? "id" : "en");
           }}
-          className="rounded-full w-12 h-12 hover:scale-110 transition-transform"
+          className="rounded-full w-11 h-11 hover:scale-110 transition-transform bg-card/80 backdrop-blur-sm shadow-md"
           aria-label="Switch language"
         >
           <Globe className="w-5 h-5" />
@@ -384,7 +433,7 @@ const Index = () => {
             playSound("click");
             toggleMute();
           }}
-          className="rounded-full w-12 h-12 hover:scale-110 transition-transform"
+          className="rounded-full w-11 h-11 hover:scale-110 transition-transform bg-card/80 backdrop-blur-sm shadow-md"
           aria-label={isMuted ? "Unmute sounds" : "Mute sounds"}
         >
           {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -393,29 +442,44 @@ const Index = () => {
 
       <div className="w-full max-w-2xl">
         {stage === "landing" && (
-          <Card className="rounded-2xl shadow-xl border-2 animate-scale-in">
-            <CardHeader className="text-center space-y-4 pb-4">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary mx-auto mb-2">
-                <span className="text-4xl">📦</span>
+          <Card className="rounded-3xl shadow-2xl border-2 animate-scale-in overflow-hidden backdrop-blur-sm bg-card/95">
+            <CardHeader className="text-center space-y-4 pb-4 pt-8">
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-chart-2 mx-auto mb-2 shadow-lg">
+                <img src={boxLogo} alt="Box of You" className="w-16 h-16 object-contain" />
               </div>
-              <CardTitle className="text-4xl font-bold text-primary">
+              <CardTitle className="text-5xl font-bold bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent">
                 Box of You
               </CardTitle>
-              <p className="text-xl text-muted-foreground">
-                {language === "en" ? "Personality Quiz" : "Quiz Kepribadian"}
+              <p className="text-xl text-muted-foreground flex items-center justify-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                {language === "en" ? "Discover Your Vibe" : "Temukan Vibes Kamu"}
+                <Sparkles className="w-5 h-5" />
               </p>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-5 pb-8">
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  {language === "en" ? "Your Age" : "Usia Kamu"}
+                <label className="text-sm font-medium text-muted-foreground">
+                  {language === "en" ? "What should I call you? 💕" : "Panggil kamu siapa? 💕"}
+                </label>
+                <Input
+                  type="text"
+                  placeholder={language === "en" ? "Your name..." : "Nama kamu..."}
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="text-lg rounded-2xl border-2 focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  {language === "en" ? "Your age ✨" : "Usia kamu ✨"}
                 </label>
                 <Input
                   type="number"
-                  placeholder={language === "en" ? "Enter your age" : "Masukkan usia"}
+                  placeholder={language === "en" ? "How old are you?" : "Berapa usia kamu?"}
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
-                  className="text-lg"
+                  className="text-lg rounded-2xl border-2 focus:ring-2 focus:ring-primary/50"
                   min="1"
                   max="120"
                 />
@@ -423,10 +487,10 @@ const Index = () => {
 
               <Button
                 onClick={startQuiz}
-                className="w-full py-6 text-lg font-semibold transition-all hover:scale-105"
+                className="w-full py-7 text-lg font-semibold transition-all hover:scale-105 rounded-2xl shadow-lg bg-gradient-to-r from-primary to-chart-2 hover:shadow-xl"
                 size="lg"
               >
-                {language === "en" ? "Start Quiz" : "Mulai Quiz"}
+                {language === "en" ? "Let's Start! 🚀" : "Yuk Mulai! 🚀"}
               </Button>
             </CardContent>
           </Card>
@@ -445,20 +509,20 @@ const Index = () => {
             </div>
 
             {/* Chat Interface */}
-            <Card className="rounded-3xl shadow-xl border-2 overflow-hidden">
+            <Card className="rounded-3xl shadow-2xl border-2 overflow-hidden backdrop-blur-sm bg-card/95">
               <ScrollArea ref={scrollAreaRef} className="h-[600px]">
                 <div className="p-6 space-y-4">
                   {chatMessages.map((message, index) => (
                     <div key={index}>
                       {message.type === "question" ? (
-                        // Question Bubble (Left - Received Message)
+                        // Question Bubble (Left - Received Message from Boxie)
                         <div className="flex justify-start gap-3 animate-fade-in">
-                          <Avatar className="w-10 h-10 flex-shrink-0">
-                            <AvatarImage src={boxLogo} alt="Box of U" />
-                            <AvatarFallback>📦</AvatarFallback>
+                          <Avatar className="w-11 h-11 flex-shrink-0 shadow-md ring-2 ring-primary/20">
+                            <AvatarImage src={boxLogo} alt="Boxie" />
+                            <AvatarFallback className="bg-gradient-to-br from-primary to-chart-2">📦</AvatarFallback>
                           </Avatar>
-                          <div className="bg-muted rounded-3xl rounded-tl-sm px-5 py-3 max-w-[75%] shadow-sm">
-                            <p className="text-base font-medium text-foreground">
+                          <div className="boxie-bubble rounded-3xl rounded-tl-sm px-6 py-4 max-w-[75%] shadow-md border border-primary/10">
+                            <p className="text-base font-medium text-foreground leading-relaxed">
                               {message.content}
                             </p>
                           </div>
@@ -466,8 +530,8 @@ const Index = () => {
                       ) : (
                         // Answer Bubble (Right - Sent Message)
                         <div className="flex justify-end animate-fade-in">
-                          <div className="bg-primary text-primary-foreground rounded-3xl rounded-tr-sm px-5 py-3 max-w-[75%] shadow-sm">
-                            <p className="text-base font-medium">
+                          <div className="user-bubble rounded-3xl rounded-tr-sm px-6 py-4 max-w-[75%]">
+                            <p className="text-base font-medium leading-relaxed">
                               {message.content}
                             </p>
                           </div>
@@ -479,15 +543,15 @@ const Index = () => {
                   {/* Typing Indicator */}
                   {isTyping && (
                     <div className="flex justify-start gap-3 animate-fade-in">
-                      <Avatar className="w-10 h-10 flex-shrink-0">
-                        <AvatarImage src={boxLogo} alt="Box of U" />
-                        <AvatarFallback>📦</AvatarFallback>
+                      <Avatar className="w-11 h-11 flex-shrink-0 shadow-md ring-2 ring-primary/20">
+                        <AvatarImage src={boxLogo} alt="Boxie" />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-chart-2">📦</AvatarFallback>
                       </Avatar>
-                      <div className="bg-muted rounded-3xl rounded-tl-sm px-5 py-3 shadow-sm">
-                        <div className="flex gap-1">
-                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                      <div className="boxie-bubble rounded-3xl rounded-tl-sm px-6 py-4 shadow-md border border-primary/10">
+                        <div className="flex gap-1.5">
+                          <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                          <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                          <span className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
                         </div>
                       </div>
                     </div>
@@ -497,12 +561,12 @@ const Index = () => {
 
               {/* Answer Options - Fixed at Bottom */}
               {!isTyping && currentQuestion < questions.length && (
-                <div className="border-t bg-background p-4 space-y-2">
+                <div className="border-t border-border/50 bg-background/50 backdrop-blur-sm p-4 space-y-2.5">
                   {questions[currentQuestion].options.map((option, index) => (
                     <button
                       key={option.label}
                       onClick={() => handleAnswer(option.type, language === "en" ? option.en : option.idText)}
-                      className="w-full bg-primary/10 hover:bg-primary/20 text-foreground rounded-2xl px-5 py-3 text-left transition-all hover:scale-[1.01] active:scale-[0.99] border border-primary/20 animate-fade-in"
+                      className="w-full bg-gradient-to-r from-primary/10 to-chart-2/10 hover:from-primary/20 hover:to-chart-2/20 text-foreground rounded-2xl px-5 py-4 text-left transition-all hover:scale-[1.02] active:scale-[0.98] border-2 border-primary/20 hover:border-primary/40 shadow-sm hover:shadow-md animate-fade-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <span className="font-bold text-primary mr-2">{option.label}.</span>
@@ -518,41 +582,54 @@ const Index = () => {
         )}
 
         {stage === "result" && result && (
-          <Card className={`rounded-2xl shadow-xl border-2 animate-scale-in`}>
-            <CardHeader className="text-center space-y-4">
-              <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full bg-${result.personality} mx-auto`}>
-                <span className="text-5xl">
-                  {result.personality === "jolly" && "😄"}
-                  {result.personality === "slick" && "😌"}
-                  {result.personality === "buck" && "🎨"}
-                  {result.personality === "snip" && "🎯"}
-                </span>
+          <Card className="rounded-3xl shadow-2xl border-2 animate-scale-in overflow-hidden backdrop-blur-sm bg-gradient-to-br from-card/95 to-secondary/30">
+            <CardHeader className="text-center space-y-5 pt-10 pb-6">
+              <div className="relative inline-flex items-center justify-center mx-auto">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary to-chart-2 rounded-full blur-2xl opacity-50 animate-pulse"></div>
+                <div className={`relative inline-flex items-center justify-center w-28 h-28 rounded-full bg-gradient-to-br from-${result.personality} to-${result.personality}/60 shadow-2xl ring-4 ring-${result.personality}/20`}>
+                  <span className="text-6xl">
+                    {result.personality === "jolly" && "😄"}
+                    {result.personality === "slick" && "😌"}
+                    {result.personality === "buck" && "🎨"}
+                    {result.personality === "snip" && "🎯"}
+                  </span>
+                </div>
               </div>
-              <CardTitle className="text-3xl font-bold">
-                {language === "en"
-                  ? personalityInfo[result.personality].en.name
-                  : personalityInfo[result.personality].idText.name}
-              </CardTitle>
-              <p className="text-lg text-muted-foreground">
+              
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-primary flex items-center justify-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  {language === "en" ? `${userName}, you're a...` : `${userName}, kamu tuh...`}
+                  <Sparkles className="w-4 h-4" />
+                </p>
+                <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary via-chart-2 to-primary bg-clip-text text-transparent">
+                  {language === "en"
+                    ? personalityInfo[result.personality].en.name
+                    : personalityInfo[result.personality].idText.name}
+                </CardTitle>
+              </div>
+              
+              <p className="text-lg text-foreground/80 leading-relaxed px-4 font-medium">
                 {language === "en"
                   ? personalityInfo[result.personality].en.description
                   : personalityInfo[result.personality].idText.description}
               </p>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg">
-                  {language === "en" ? "Personality Breakdown" : "Persentase Kepribadian"}
+            <CardContent className="space-y-7 pb-8">
+              <div className="space-y-4 bg-background/50 backdrop-blur-sm rounded-2xl p-5 border-2 border-primary/10">
+                <h3 className="font-bold text-lg text-center flex items-center justify-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  {language === "en" ? "Your Vibe Breakdown" : "Breakdown Vibe Kamu"}
                 </h3>
                 {Object.entries(result.percentages).map(([type, percentage]) => (
-                  <div key={type} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="capitalize">{type}</span>
-                      <span className="font-semibold">{percentage}%</span>
+                  <div key={type} className="space-y-2">
+                    <div className="flex justify-between text-sm font-medium">
+                      <span className="capitalize text-foreground/80">{type}</span>
+                      <span className="font-bold text-primary">{percentage}%</span>
                     </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-3 bg-muted/50 rounded-full overflow-hidden shadow-inner">
                       <div
-                        className={`h-full bg-${type} rounded-full transition-all duration-500`}
+                        className={`h-full bg-${type} rounded-full transition-all duration-1000 shadow-lg`}
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -560,14 +637,41 @@ const Index = () => {
                 ))}
               </div>
 
-              <div className="flex gap-3">
-                <Button onClick={shareResult} className="flex-1 gap-2" size="lg">
-                  <Share2 className="w-4 h-4" />
-                  {language === "en" ? "Share Result" : "Bagikan Hasil"}
+              <div className="bg-gradient-to-br from-primary/10 to-chart-2/10 rounded-2xl p-6 border-2 border-primary/20 text-center space-y-3">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {language === "en" ? "Perfect gift box for you:" : "Gift box yang cocok buat kamu:"}
+                </p>
+                <p className="text-lg font-bold text-foreground">
+                  {language === "en" ? "✨ Personalized Box of You ✨" : "✨ Box of You Khusus Kamu ✨"}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={() => window.open('https://www.instagram.com/boxofu', '_blank')}
+                  className="w-full gap-2 py-7 text-base font-semibold transition-all hover:scale-105 rounded-2xl shadow-lg bg-gradient-to-r from-primary to-chart-2 hover:shadow-xl"
+                >
+                  <Instagram className="w-5 h-5" />
+                  {language === "en" ? "Discover Your Gift Box 🎁" : "Temukan Gift Box Kamu 🎁"}
                 </Button>
-                <Button onClick={resetQuiz} variant="outline" className="flex-1" size="lg">
-                  {language === "en" ? "Try Again" : "Coba Lagi"}
-                </Button>
+                
+                <div className="flex gap-3">
+                  <Button
+                    onClick={shareResult}
+                    variant="outline"
+                    className="flex-1 gap-2 py-6 text-base font-medium transition-all hover:scale-105 rounded-2xl border-2 hover:border-primary/50"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    {language === "en" ? "Share" : "Bagikan"}
+                  </Button>
+                  <Button
+                    onClick={resetQuiz}
+                    variant="outline"
+                    className="flex-1 py-6 text-base font-medium transition-all hover:scale-105 rounded-2xl border-2 hover:border-primary/50"
+                  >
+                    {language === "en" ? "Take Again" : "Ulangi"}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
